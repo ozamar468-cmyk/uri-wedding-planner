@@ -31,9 +31,16 @@ export default function TaskForm({ event, defaultDate, onSave, onClose }) {
     })
   }
 
+  const handleOverlayClick = (e) => {
+    // Only close if clicking directly on overlay, not on native date/time pickers
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay" onMouseDown={handleOverlayClick}>
+      <div className="modal" onMouseDown={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{event ? 'עריכת משימה' : 'משימה חדשה'}</h3>
           <button className="close-btn" onClick={onClose}>✕</button>

@@ -45,10 +45,13 @@ export default function App() {
       })
       .subscribe()
 
-    // Polling fallback - refresh every 5 seconds for cross-user sync
+    // Polling fallback - refresh every 10 seconds for cross-user sync
     const pollInterval = setInterval(() => {
-      fetchEvents()
-    }, 5000)
+      // Don't poll while form is open to prevent re-render interference
+      if (!document.querySelector('.modal-overlay')) {
+        fetchEvents()
+      }
+    }, 10000)
 
     return () => {
       supabase.removeChannel(channel)
