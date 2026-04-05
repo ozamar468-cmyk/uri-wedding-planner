@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from './supabase.js'
 import NameScreen from './components/NameScreen.jsx'
 import Header from './components/Header.jsx'
@@ -18,6 +18,12 @@ export default function App() {
   const [showForm, setShowForm] = useState(false)
   const [editingEvent, setEditingEvent] = useState(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const showFormRef = useRef(false)
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    showFormRef.current = showForm
+  }, [showForm])
 
   const fetchEvents = useCallback(async () => {
     if (!supabase) return
@@ -41,14 +47,17 @@ export default function App() {
     const channel = supabase
       .channel('calendar_events_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_events' }, () => {
-        fetchEvents()
+        // Only auto-refresh if form is not open
+        if (!showFormRef.current) {
+          fetchEvents()
+        }
       })
       .subscribe()
 
     // Polling fallback - refresh every 10 seconds for cross-user sync
     const pollInterval = setInterval(() => {
       // Don't poll while form is open to prevent re-render interference
-      if (!document.querySelector('.modal-overlay')) {
+      if (!showFormRef.current) {
         fetchEvents()
       }
     }, 10000)
@@ -178,9 +187,11 @@ export default function App() {
         />
       )}
 
-      <button className="fab" onClick={() => openFormForDate(selectedDate || new Date().toISOString().split('T')[0])}>
-        +
-      </button>
+      {!showForm && (
+        <button className="fab" onClick={() => openFormForDate(selectedDate || new Date().toISOString().split('T')[0])}>
+          +
+        </button>
+      )}
     </div>
   )
 }

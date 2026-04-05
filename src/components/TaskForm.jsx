@@ -16,34 +16,35 @@ export default function TaskForm({ event, defaultDate, onSave, onClose }) {
   const [category, setCategory] = useState(event?.category || 'כללי')
   const [assignee, setAssignee] = useState(event?.assignee || '')
   const [notes, setNotes] = useState(event?.notes || '')
+  const [saving, setSaving] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!title.trim()) return
+    e.stopPropagation()
+    if (!title.trim() || saving) return
 
-    onSave({
-      title: title.trim(),
-      date,
-      time: time || null,
-      category,
-      assignee: assignee.trim() || null,
-      notes: notes.trim() || null,
-    })
-  }
-
-  const handleOverlayClick = (e) => {
-    // Only close if clicking directly on overlay, not on native date/time pickers
-    if (e.target === e.currentTarget) {
-      onClose()
+    setSaving(true)
+    try {
+      await onSave({
+        title: title.trim(),
+        date,
+        time: time || null,
+        category,
+        assignee: assignee.trim() || null,
+        notes: notes.trim() || null,
+      })
+    } catch (err) {
+      console.error('Save failed:', err)
+      setSaving(false)
     }
   }
 
   return (
-    <div className="modal-overlay" onMouseDown={handleOverlayClick}>
-      <div className="modal" onMouseDown={e => e.stopPropagation()}>
+    <div className="modal-overlay">
+      <div className="modal">
         <div className="modal-header">
           <h3>{event ? 'עריכת משימה' : 'משימה חדשה'}</h3>
-          <button className="close-btn" onClick={onClose}>✕</button>
+          <button className="close-btn" type="button" onClick={onClose}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -106,8 +107,8 @@ export default function TaskForm({ event, defaultDate, onSave, onClose }) {
             />
           </div>
 
-          <button type="submit" className="save-btn" disabled={!title.trim()}>
-            {event ? 'עדכון' : 'שמירה'} ✨
+          <button type="submit" className="save-btn" disabled={!title.trim() || saving}>
+            {saving ? 'שומר...' : (event ? 'עדכון' : 'שמירה')} ✨
           </button>
         </form>
       </div>
